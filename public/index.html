@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bahs Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #10a37f, #4285f4, #20b2aa, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .control-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        input[type="text"] {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #8b5cf6;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-start {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+        }
+        .btn-start:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.4);
+        }
+        .btn-next {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            display: none;
+        }
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .round-info {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fbbf24;
+        }
+        .arena-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .ai-column {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        .ai-header {
+            padding: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 3px solid var(--ai-color);
+        }
+        .ai-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--ai-color);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .ai-messages {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-left: 4px solid var(--ai-color);
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .message-round {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            opacity: 0.7;
+        }
+        .message.error {
+            border-left-color: #ef4444;
+            color: #fca5a5;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            font-style: italic;
+            opacity: 0.7;
+        }
+        .loading-dots span {
+            animation: loading 1.4s infinite;
+            display: inline-block;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes loading {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+        }
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            margin-left: auto;
+        }
+        .status-badge.available { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-badge.unavailable { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .arena-grid { grid-template-columns: 1fr; }
+            .input-group { flex-direction: column; }
+            input[type="text"] { min-width: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Bahs Arena</h1>
+
+        <div class="control-panel">
+            <div class="input-group">
+                <input type="text" id="topicInput" placeholder="Bahs mavzusini yozing... (masalan: 'Suniy intellekt odamlarni ishdan bo'shatadimi?')">
+                <button class="btn-start" id="startBtn">⚔️ Bahsni boshlash</button>
+                <button class="btn-next" id="nextRoundBtn">➡️ Keyingi bosqich</button>
+            </div>
+        </div>
+
+        <div class="round-info" id="roundInfo"></div>
+
+        <div class="arena-grid" id="arenaGrid"></div>
+    </div>
+
+    <script>
+        const topicInput = document.getElementById('topicInput');
+        const startBtn = document.getElementById('startBtn');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        const roundInfo = document.getElementById('roundInfo');
+        const arenaGrid = document.getElementById('arenaGrid');
+
+        let currentRound = 0;
+        let allHistory = [];
+        let aiList = [];
+        let currentTopic = '';
+
+        // AI holatlarini yuklash
+        async function loadStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                aiList = data.ais;
+                renderColumns();
+            } catch (err) {
+                alert('Server bilan bog\'lanishda xato! Serverni ishga tushirganingizni tekshiring.');
+            }
+        }
+
+        function renderColumns() {
+            arenaGrid.innerHTML = '';
+            aiList.forEach(ai => {
+                const col = document.createElement('div');
+                col.className = 'ai-column';
+                col.style.setProperty('--ai-color', ai.color);
+                col.id = `col-${ai.id}`;
+                col.innerHTML = `
+                    <div class="ai-header">
+                        <span class="ai-dot"></span>
+                        ${ai.name}
+                        <span class="status-badge ${ai.available ? 'available' : 'unavailable'}">
+                            ${ai.available ? '✅ Tayyor' : '❌ Kalit yo\'q'}
+                        </span>
+                    </div>
+                    <div class="ai-messages" id="messages-${ai.id}">
+                        ${!ai.available ? '<div class="message error">⚠️ Bu AI ishlashi uchun .env faylida tegishli API kalitni kiriting</div>' : ''}
+                    </div>
+                `;
+                arenaGrid.appendChild(col);
+            });
+        }
+
+        function addMessage(aiId, content, round, isError = false) {
+            const msgContainer = document.getElementById(`messages-${aiId}`);
+            if (!msgContainer) return;
+
+            // Loading ni olib tashlash
+            const loading = msgContainer.querySelector('.loading');
+            if (loading) loading.remove();
+
+            const msg = document.createElement('div');
+            msg.className = `message ${isError ? 'error' : ''}`;
+            msg.innerHTML = `
+                <div class="message-round">🔄 ${round}-bosqich javobi</div>
+                ${content}
+            `;
+            msgContainer.appendChild(msg);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+
+        function showLoading(aiId) {
+            const msgContainer = document.getElementById(`messages-${aiId}`);
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.innerHTML = `Javob yozilmoqda <span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>`;
+            msgContainer.appendChild(loading);
+        }
+
+        function showErrorAll(message) {
+            aiList.forEach(ai => {
+                if (ai.available) addMessage(ai.id, message, currentRound, true);
+            });
+        }
+
+        async function startDebate() {
+            const topic = topicInput.value.trim();
+            if (!topic) {
+                alert('Iltimos, bahs mavzusini kiriting!');
+                return;
+            }
+
+            currentTopic = topic;
+            currentRound = 1;
+            allHistory = [];
+
+            // Eski xabarlarni tozalash
+            aiList.forEach(ai => {
+                const container = document.getElementById(`messages-${ai.id}`);
+                container.innerHTML = ai.available ? '' : '<div class="message error">⚠️ Bu AI ishlashi uchun .env faylida tegishli API kalitni kiriting</div>';
+                if (ai.available) showLoading(ai.id);
+            });
+
+            startBtn.disabled = true;
+            nextRoundBtn.style.display = 'none';
+            roundInfo.textContent = `⚔️ Mavzu: "${topic}" - Bahs boshlandi!`;
+
+            try {
+                const res = await fetch('/api/debate/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic })
+                });
+                const data = await res.json();
+
+                data.responses.forEach(resp => {
+                    if (resp.error) {
+                        addMessage(resp.aiId, resp.error, resp.round, true);
+                    } else {
+                        addMessage(resp.aiId, resp.content, resp.round);
+                        allHistory.push(resp);
+                    }
+                });
+
+                nextRoundBtn.style.display = 'inline-block';
+                nextRoundBtn.disabled = false;
+            } catch (err) {
+                showErrorAll('Xato yuz berdi: ' + err.message);
+            }
+
+            startBtn.disabled = false;
+        }
+
+        async function nextRound() {
+            currentRound++;
+            roundInfo.textContent = `⚔️ Mavzu: "${currentTopic}" - ${currentRound}-bosqich davom etmoqda...`;
+
+            aiList.forEach(ai => {
+                if (ai.available) showLoading(ai.id);
+            });
+
+            nextRoundBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/debate/round', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        topic: currentTopic,
+                        history: allHistory,
+                        round: currentRound - 1
+                    })
+                });
+                const data = await res.json();
+
+                data.responses.forEach(resp => {
+                    if (resp.error) {
+                        addMessage(resp.aiId, resp.error, resp.round, true);
+                    } else {
+                        addMessage(resp.aiId, resp.content, resp.round);
+                        allHistory.push(resp);
+                    }
+                });
+
+                roundInfo.textContent = `⚔️ Mavzu: "${currentTopic}" - ${currentRound} bosqich yakunlandi!`;
+            } catch (err) {
+                showErrorAll('Xato yuz berdi: ' + err.message);
+            }
+
+            nextRoundBtn.disabled = false;
+        }
+
+        startBtn.addEventListener('click', startDebate);
+        nextRoundBtn.addEventListener('click', nextRound);
+        topicInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !startBtn.disabled) startDebate();
+        });
+
+        // Sahifa yuklanganda holatni olish
+        loadStatus();
+    </script>
+</body>
+</html>
